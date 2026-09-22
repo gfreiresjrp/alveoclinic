@@ -1,0 +1,745 @@
+@import "tailwindcss";
+
+@theme {
+  /* ===== Marca ALVEO ===== */
+  --color-navy: #0b1d3a;
+  --color-navy-deep: #13294b;
+  --color-navy-800: #0f2342;
+  --color-lime: #c6e31a;
+  --color-lime-bright: #d6f42b;
+  --color-graphite: #2b2f36;
+  --color-cloud: #e6e8eb;
+
+  /* apoio clínico (status, agenda, prontuário) */
+  --color-mint: #4fd1a5;
+  --color-amber: #f4b942;
+  --color-coral: #f2696b;
+
+  /* superfícies e texto semânticos */
+  --color-background: #0b1d3a;
+  --color-surface: #0f2342;
+  --color-surface-2: #13294b;
+  --color-foreground: #eef2f8;
+  --color-muted: #9db0c9;
+  --color-border: rgba(198, 227, 26, 0.14);
+
+  --font-display: var(--font-poppins);
+  --font-sans: var(--font-montserrat);
+
+  --shadow-glow: 0 0 0 1px rgba(198, 227, 26, 0.25),
+    0 20px 60px -20px rgba(198, 227, 26, 0.35);
+  --shadow-card: 0 24px 60px -30px rgba(0, 0, 0, 0.7);
+
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.75rem;
+
+  --animate-marquee: marquee 32s linear infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-pulse-ring: pulse-ring 2.4s ease-out infinite;
+  --animate-typing: typing 1.4s ease-in-out infinite;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+@keyframes pulse-ring {
+  0% { transform: scale(0.9); opacity: 0.55; }
+  70% { transform: scale(1.5); opacity: 0; }
+  100% { opacity: 0; }
+}
+@keyframes typing {
+  0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-3px); }
+}
+
+@layer base {
+  * { border-color: rgba(255, 255, 255, 0.08); }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 88px;
+  }
+
+  body {
+    background-color: #0a1a33;
+    color: var(--color-foreground);
+    font-family: var(--font-sans), system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Fundo contínuo fixo — sem emendas entre seções. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(1000px 640px at 82% -4%, rgba(198, 227, 26, 0.09), transparent 62%),
+      radial-gradient(820px 620px at -8% 4%, rgba(19, 41, 75, 0.7), transparent 58%),
+      linear-gradient(180deg, #0b1d3a 0%, #0a1a34 45%, #081428 100%);
+  }
+
+  ::selection {
+    background: var(--color-lime);
+    color: var(--color-navy);
+  }
+}
+
+@layer utilities {
+  .font-display { font-family: var(--font-display), system-ui, sans-serif; }
+
+  .container-x {
+    width: 100%;
+    max-width: 76rem;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+  @media (min-width: 768px) {
+    .container-x { padding-inline: 2rem; }
+  }
+
+  .text-gradient {
+    background: linear-gradient(180deg, #ffffff 0%, #b9c6dc 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .lime-underline {
+    text-decoration: underline;
+    text-decoration-color: var(--color-lime);
+    text-underline-offset: 6px;
+    text-decoration-thickness: 3px;
+  }
+
+  .card-surface {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(6px);
+  }
+
+  .glow-ring { box-shadow: var(--shadow-glow); }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition:
+      opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform;
+  }
+  .reveal.is-visible { opacity: 1; transform: none; }
+
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { scrollbar-width: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+/* ===========================================================================
+   Tema do sistema (/sistema)
+   A landing page é escura; o sistema é claro, quente e denso — é ferramenta
+   de trabalho, usada o dia inteiro. O acento é um dourado sóbrio; trocar
+   --color-accent* abaixo muda a cor do sistema inteiro.
+   =========================================================================== */
+@theme {
+  --color-accent: #2563eb;
+  --color-accent-strong: #1d4ed8;
+  --color-accent-soft: #eef3ff;
+  --color-accent-line: #d7e3ff;
+  --color-rail: #182238;
+}
+
+@layer utilities {
+  .app-shell {
+    background-color: #f5f6f8;
+    color: #16181d;
+    font-family: var(--font-sans), system-ui, sans-serif;
+    /* Altura da barra superior. No desktop ela não existe: tudo mora no
+       trilho lateral, e as telas de tela cheia usam esta variável no cálculo
+       da própria altura. */
+    --app-header: 57px;
+  }
+
+  @media (min-width: 1024px) {
+    .app-shell {
+      --app-header: 0px;
+    }
+  }
+
+  .panel {
+    background-color: #ffffff;
+    border: 1px solid #ececee;
+    border-radius: 1rem;
+  }
+
+  /* Trilho escuro, como no sistema de referência. */
+  /*
+   * O trilho expande no hover. Cada item é uma linha de largura total com uma
+   * coluna de ícone fixa em 2.5rem — assim o ícone fica no mesmo x colapsado
+   * ou expandido, e só o rótulo entra. O recorte é do <aside>, que tem
+   * overflow hidden.
+   */
+  .rail-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 2.5rem;
+    border-radius: 0.625rem;
+    color: rgba(255, 255, 255, 0.5);
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  .rail-item:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+  }
+  .rail-item[data-active="true"] {
+    background-color: var(--color-accent);
+    color: #ffffff;
+  }
+  .rail-icon {
+    position: relative;
+    display: grid;
+    place-items: center;
+    flex: 0 0 2.5rem;
+    width: 2.5rem;
+  }
+  .rail-label {
+    min-width: 0;
+    overflow: hidden;
+    padding-right: 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .app-rail[data-open="true"] .rail-label {
+    opacity: 1;
+  }
+
+  /*
+   * Cabeçalho do trilho: colapsado mostra só o símbolo, expandido troca pelo
+   * lockup inteiro (que já traz o "A"). O wordmark fica absoluto para a troca
+   * ser um cross-fade no mesmo lugar, sem empurrar a linha.
+   */
+  .rail-logo {
+    position: relative;
+  }
+  .rail-logo-symbol {
+    transition: opacity 0.15s ease;
+  }
+  .rail-logo-word {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    height: 17px;
+    width: auto;
+    transform: translateY(-50%);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .app-rail[data-open="true"] .rail-logo-symbol {
+    opacity: 0;
+  }
+  .app-rail[data-open="true"] .rail-logo-word {
+    opacity: 1;
+  }
+
+  .field {
+    width: 100%;
+    border: 1px solid #e2e2e6;
+    border-radius: 0.625rem;
+    background-color: #ffffff;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+    color: #1a1a1c;
+  }
+  .field::placeholder {
+    color: #a5a5ad;
+  }
+  .field:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  }
+  .field:disabled {
+    background-color: #f7f7f8;
+    color: #6b6b73;
+  }
+
+  .field-pill {
+    border-radius: 999px;
+    padding-block: 0.4375rem;
+    padding-inline: 2.25rem 0.875rem;
+  }
+
+  /* Variantes compactas. Como `.field` usa o atalho `padding`, ajustar
+     espaçamento com utilitários do Tailwind não funciona — estas classes
+     precisam vir depois dela na folha. */
+  .field-sm {
+    height: 2rem;
+    padding: 0 0.625rem;
+    font-size: 0.8125rem;
+    border-radius: 0.5rem;
+  }
+
+  .field-icon {
+    padding-left: 2rem;
+  }
+
+  /* `.field` fixa width:100%; esta variante devolve a largura ao conteúdo. */
+  .field-auto {
+    width: auto;
+  }
+
+  .label-field {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #55555e;
+    margin-bottom: 0.375rem;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.625rem;
+    padding: 0.625rem 1.125rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    white-space: nowrap;
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-primary {
+    background-color: var(--color-accent);
+    color: #ffffff;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background-color: var(--color-accent-strong);
+  }
+
+  .btn-secondary {
+    background-color: #ffffff;
+    border: 1px solid #e2e2e6;
+    color: #3d3d45;
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background-color: #fafafa;
+    border-color: #cfcfd6;
+  }
+
+  .btn-danger {
+    background-color: #ffffff;
+    border: 1px solid #f3c9c5;
+    color: #b42318;
+  }
+  .btn-danger:hover:not(:disabled) {
+    background-color: #fef4f3;
+  }
+
+  /* Selo redondo que acompanha cada indicador e cada cabeçalho de card. */
+  .icon-badge {
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 999px;
+    background-color: var(--color-accent-soft);
+    color: var(--color-accent);
+  }
+}
+
+/* ===========================================================================
+   Tela de conversas — layout de messenger (lista + thread), ocupando a tela
+   inteira. As cores seguem a convenção que todo mundo já conhece de
+   aplicativo de mensagem: fundo bege, balão claro para quem escreve de fora
+   e balão verde para quem responde pela clínica.
+   =========================================================================== */
+@layer utilities {
+  /* Fundo chapado: sem textura, para a conversa ser a única coisa na tela. */
+  .chat-wallpaper {
+    background-color: #f7f7f6;
+  }
+
+  .bubble {
+    position: relative;
+    /* No celular o balão ocupa quase a largura toda, como no aplicativo. */
+    max-width: 85%;
+    border-radius: 0.5rem;
+    padding: 0.375rem 0.5rem 0.375rem 0.5625rem;
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+    color: #111b21;
+    box-shadow: 0 1px 1px rgba(11, 20, 26, 0.06);
+    word-break: break-word;
+  }
+
+  @media (min-width: 640px) {
+    .bubble {
+      max-width: min(65%, 34rem);
+    }
+  }
+
+  .bubble-in {
+    background-color: #ffffff;
+    align-self: flex-start;
+  }
+  .bubble-out {
+    background-color: #d9fdd3;
+    align-self: flex-end;
+  }
+
+  /* A "rabicho" aparece só na primeira mensagem de cada sequência. */
+  .bubble-in.has-tail {
+    border-top-left-radius: 0;
+  }
+  .bubble-in.has-tail::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -0.5rem;
+    width: 0.5rem;
+    height: 0.8125rem;
+    background-color: inherit;
+    clip-path: polygon(100% 0, 0 0, 100% 100%);
+  }
+
+  .bubble-out.has-tail {
+    border-top-right-radius: 0;
+  }
+  .bubble-out.has-tail::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: -0.5rem;
+    width: 0.5rem;
+    height: 0.8125rem;
+    background-color: inherit;
+    clip-path: polygon(0 0, 100% 0, 0 100%);
+  }
+
+  .bubble-time {
+    float: right;
+    margin-left: 0.5rem;
+    margin-top: 0.375rem;
+    font-size: 0.6875rem;
+    line-height: 1;
+    color: rgba(17, 27, 33, 0.45);
+    white-space: nowrap;
+  }
+
+  .chat-divider {
+    align-self: center;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: #98a0a6;
+    text-transform: uppercase;
+  }
+
+  .chat-search {
+    width: 100%;
+    border: none;
+    border-radius: 999px;
+    background-color: #f4f4f5;
+    padding: 0.5rem 0.875rem 0.5rem 2.25rem;
+    font-size: 0.8125rem;
+    color: #18181b;
+  }
+  .chat-search::placeholder {
+    color: #a1a1aa;
+  }
+  .chat-search:focus {
+    outline: none;
+    background-color: #efeff1;
+  }
+
+  .chat-composer {
+    width: 100%;
+    border: none;
+    border-radius: 1.25rem;
+    background-color: #f4f4f5;
+    padding: 0.5625rem 1rem;
+    font-size: 0.9375rem;
+    color: #18181b;
+  }
+  .chat-composer::placeholder {
+    color: #8696a0;
+  }
+  .chat-composer:focus {
+    outline: none;
+  }
+}
+
+/* ===========================================================================
+   Impressão: a folha do documento vira a página, sem trilho nem barra.
+   =========================================================================== */
+@media print {
+  body::before {
+    display: none;
+  }
+
+  aside,
+  header {
+    display: none !important;
+  }
+
+  .app-shell {
+    background-color: #ffffff;
+  }
+
+  main {
+    padding: 0 !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 18mm;
+  }
+}
+
+/* ===========================================================================
+   Modo escuro do sistema
+   ---------------------------------------------------------------------------
+   O app usa um conjunto pequeno e disciplinado de neutros (zinc, slate e
+   branco). Em vez de espalhar variantes `dark:` por trinta arquivos, este
+   bloco remapeia esses utilitários quando o tema escuro está ligado. Cor
+   semântica (rose, amber, emerald…) também é reescalada, para não estourar
+   sobre fundo escuro.
+
+   Vale só dentro de .app-shell: a landing page tem tema próprio.
+   =========================================================================== */
+:root {
+  --tooth-fill: #ffffff;
+  --tooth-stroke: #3f4a5c;
+  --chart-empty: #e4e4e7;
+}
+
+[data-theme="dark"] {
+  --tooth-fill: #27272a;
+  --tooth-stroke: #a1a1aa;
+  --chart-empty: #3f3f46;
+  --color-accent-soft: #1e293b;
+  --color-accent-line: #334155;
+}
+
+[data-theme="dark"] .app-shell {
+  background-color: #0e0e11;
+  color: #e4e4e7;
+}
+
+[data-theme="dark"] .panel {
+  background-color: #18181b;
+  border-color: #27272a;
+}
+
+[data-theme="dark"] .field {
+  background-color: #1f1f23;
+  border-color: #3f3f46;
+  color: #f4f4f5;
+}
+[data-theme="dark"] .field::placeholder {
+  color: #71717a;
+}
+[data-theme="dark"] .field:disabled {
+  background-color: #18181b;
+  color: #71717a;
+}
+[data-theme="dark"] .label-field {
+  color: #a1a1aa;
+}
+
+[data-theme="dark"] .btn-secondary {
+  background-color: #1f1f23;
+  border-color: #3f3f46;
+  color: #d4d4d8;
+}
+[data-theme="dark"] .btn-secondary:hover:not(:disabled) {
+  background-color: #27272a;
+  border-color: #52525b;
+}
+[data-theme="dark"] .btn-danger {
+  background-color: #1f1f23;
+  border-color: #7f1d1d;
+  color: #fca5a5;
+}
+
+[data-theme="dark"] .rail-item[data-active="true"] {
+  background-color: var(--color-accent);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .chat-wallpaper {
+  background-color: #17171a;
+}
+[data-theme="dark"] .bubble {
+  color: #e4e4e7;
+  box-shadow: none;
+}
+[data-theme="dark"] .bubble-in {
+  background-color: #27272a;
+}
+[data-theme="dark"] .bubble-out {
+  background-color: #14532d;
+}
+[data-theme="dark"] .bubble-time {
+  color: rgba(228, 228, 231, 0.45);
+}
+[data-theme="dark"] .chat-divider {
+  color: #71717a;
+}
+[data-theme="dark"] .chat-search,
+[data-theme="dark"] .chat-composer {
+  background-color: #27272a;
+  color: #f4f4f5;
+}
+
+/* ---- neutros ---- */
+[data-theme="dark"] .app-shell .bg-white {
+  background-color: #18181b;
+}
+[data-theme="dark"] .app-shell .bg-zinc-50,
+[data-theme="dark"] .app-shell .bg-slate-50 {
+  background-color: #1f1f23;
+}
+[data-theme="dark"] .app-shell .bg-zinc-100,
+[data-theme="dark"] .app-shell .bg-slate-100 {
+  background-color: #27272a;
+}
+[data-theme="dark"] .app-shell .bg-zinc-200 {
+  background-color: #3f3f46;
+}
+/* Pílula ativa: no claro é preta com texto branco; no escuro vira o acento. */
+[data-theme="dark"] .app-shell .bg-zinc-900 {
+  background-color: var(--color-accent);
+}
+
+[data-theme="dark"] .app-shell .text-zinc-900,
+[data-theme="dark"] .app-shell .text-slate-900 {
+  color: #f4f4f5;
+}
+[data-theme="dark"] .app-shell .text-zinc-800 {
+  color: #e4e4e7;
+}
+[data-theme="dark"] .app-shell .text-zinc-700,
+[data-theme="dark"] .app-shell .text-slate-700 {
+  color: #d4d4d8;
+}
+[data-theme="dark"] .app-shell .text-zinc-600,
+[data-theme="dark"] .app-shell .text-slate-600,
+[data-theme="dark"] .app-shell .text-zinc-500,
+[data-theme="dark"] .app-shell .text-slate-500 {
+  color: #a1a1aa;
+}
+[data-theme="dark"] .app-shell .text-zinc-400,
+[data-theme="dark"] .app-shell .text-slate-400 {
+  color: #71717a;
+}
+[data-theme="dark"] .app-shell .text-zinc-300,
+[data-theme="dark"] .app-shell .text-slate-300 {
+  color: #52525b;
+}
+
+[data-theme="dark"] .app-shell .border-zinc-200,
+[data-theme="dark"] .app-shell .border-slate-200 {
+  border-color: #3f3f46;
+}
+[data-theme="dark"] .app-shell .border-zinc-100,
+[data-theme="dark"] .app-shell .border-slate-100 {
+  border-color: #27272a;
+}
+[data-theme="dark"] .app-shell .border-zinc-300 {
+  border-color: #52525b;
+}
+[data-theme="dark"] .app-shell .border-zinc-900 {
+  border-color: var(--color-accent);
+}
+[data-theme="dark"] .app-shell .divide-zinc-100 > :not([hidden]) ~ :not([hidden]),
+[data-theme="dark"] .app-shell .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #27272a;
+}
+
+/* ---- cor semântica: fundos claros viram tintas escuras ---- */
+[data-theme="dark"] .app-shell .bg-rose-50 {
+  background-color: #2a1416;
+}
+[data-theme="dark"] .app-shell .bg-amber-50 {
+  background-color: #2a2010;
+}
+[data-theme="dark"] .app-shell .bg-emerald-50 {
+  background-color: #10241a;
+}
+[data-theme="dark"] .app-shell .bg-blue-50 {
+  background-color: #14203a;
+}
+[data-theme="dark"] .app-shell .bg-sky-50 {
+  background-color: #11212e;
+}
+[data-theme="dark"] .app-shell .bg-violet-50 {
+  background-color: #1f1733;
+}
+
+[data-theme="dark"] .app-shell .border-rose-200 {
+  border-color: #7f1d1d;
+}
+[data-theme="dark"] .app-shell .border-amber-200 {
+  border-color: #78350f;
+}
+[data-theme="dark"] .app-shell .border-emerald-200 {
+  border-color: #14532d;
+}
+[data-theme="dark"] .app-shell .border-blue-200 {
+  border-color: #1e3a8a;
+}
+[data-theme="dark"] .app-shell .border-sky-200 {
+  border-color: #075985;
+}
+[data-theme="dark"] .app-shell .border-violet-200 {
+  border-color: #4c1d95;
+}
+
+[data-theme="dark"] .app-shell .text-rose-700,
+[data-theme="dark"] .app-shell .text-rose-800,
+[data-theme="dark"] .app-shell .text-rose-900 {
+  color: #fca5a5;
+}
+[data-theme="dark"] .app-shell .text-amber-700,
+[data-theme="dark"] .app-shell .text-amber-800,
+[data-theme="dark"] .app-shell .text-amber-900 {
+  color: #fcd34d;
+}
+[data-theme="dark"] .app-shell .text-emerald-700 {
+  color: #6ee7b7;
+}
+[data-theme="dark"] .app-shell .text-blue-700 {
+  color: #93c5fd;
+}
+[data-theme="dark"] .app-shell .text-sky-700 {
+  color: #7dd3fc;
+}
+[data-theme="dark"] .app-shell .text-violet-700 {
+  color: #c4b5fd;
+}
