@@ -23,7 +23,22 @@ function connection() {
     const url = process.env.DATABASE_URL;
     if (!url) {
       throw new Error(
-        "DATABASE_URL não configurada. Use a connection string do Supabase (pooler, porta 6543).",
+        "DATABASE_URL não configurada. Copie em Supabase -> Connect -> URI -> Transaction pooler.",
+      );
+    }
+    // Um erro de conexão por string pela metade some dentro de um "server
+    // error" genérico e custa um deploy inteiro para descobrir. Estes três
+    // casos são os que acontecem de verdade ao montar a string à mão.
+    const marcadores = ["REGIAO", "YOUR-PASSWORD", "[", "SENHA@", "<"];
+    const encontrado = marcadores.find((m) => url.includes(m));
+    if (encontrado) {
+      throw new Error(
+        `DATABASE_URL ainda tem um trecho de exemplo ("${encontrado}"). Copie a string inteira em Supabase -> Connect -> URI -> Transaction pooler e troque só a senha.`,
+      );
+    }
+    if (url.startsWith("file:")) {
+      throw new Error(
+        "DATABASE_URL aponta para um arquivo SQLite. O banco agora é Postgres no Supabase.",
       );
     }
     const client = postgres(url, { prepare: false, max: 1 });

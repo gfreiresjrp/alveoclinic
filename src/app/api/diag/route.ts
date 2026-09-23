@@ -55,13 +55,22 @@ export async function GET() {
     const [row] = await db.select({ n: count() }).from(users);
     return NextResponse.json({ ok: true, env, alvo, usuarios: row.n });
   } catch (erro) {
-    const e = erro as { code?: string; name?: string; routine?: string; severity?: string };
+    const e = erro as {
+      code?: string;
+      name?: string;
+      routine?: string;
+      message?: string;
+    };
+    // A mensagem só é repassada quando é uma validação nossa — as do driver
+    // podem trazer pedaços da connection string.
+    const nossa = e.message?.startsWith("DATABASE_URL") ? e.message : null;
     return NextResponse.json(
       {
         ok: false,
         env,
         alvo,
         erro: { code: e.code ?? null, name: e.name ?? null, routine: e.routine ?? null },
+        aviso: nossa,
       },
       { status: 500 },
     );
