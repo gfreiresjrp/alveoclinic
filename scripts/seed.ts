@@ -36,8 +36,8 @@ const today = isoDate(new Date());
 const monday = startOfWeek(today);
 
 async function main() {
-  // ordem inversa das dependências — não conto com o cascade do SQLite,
-  // que depende do pragma foreign_keys estar ligado.
+  // Ordem inversa das dependências. No Postgres as foreign keys são
+  // sempre verificadas, então a ordem aqui não é zelo: é obrigação.
   await db.delete(campaignSends);
   await db.delete(campaigns);
   await db.delete(payments);
