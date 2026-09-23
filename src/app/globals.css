@@ -187,6 +187,17 @@
     border-radius: 1rem;
   }
 
+  /*
+   * Barra do esqueleto de carregamento. Mora aqui, e não numa classe `dark:`
+   * do Tailwind, porque o tema deste sistema é o atributo data-theme — a
+   * variante do Tailwind segue o tema do sistema operacional e pintava barras
+   * pretas dentro do app claro.
+   */
+  .skeleton-bar {
+    background-color: #e8e8ec;
+    border-radius: 0.375rem;
+  }
+
   /* Trilho escuro, como no sistema de referência. */
   /*
    * O trilho expande no hover. Cada item é uma linha de largura total com uma
@@ -554,6 +565,10 @@
 [data-theme="dark"] .panel {
   background-color: #18181b;
   border-color: #27272a;
+}
+
+[data-theme="dark"] .skeleton-bar {
+  background-color: #26262b;
 }
 
 [data-theme="dark"] .field {

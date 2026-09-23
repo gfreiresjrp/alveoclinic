@@ -12,7 +12,7 @@ import { usePathname } from "next/navigation";
  */
 
 function Bar({ className = "" }: { className?: string }) {
-  return <div className={`rounded-md bg-slate-200/70 dark:bg-zinc-800 ${className}`} />;
+  return <div className={`skeleton-bar ${className}`} />;
 }
 
 export default function Loading() {
@@ -41,11 +41,11 @@ export default function Loading() {
         ))}
       </div>
 
-      <div className="mt-4 panel p-5">
+      <div className="panel mt-4 p-5">
         <Bar className="h-4 w-40" />
-        <div className="mt-4 space-y-3">
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <Bar key={i} className="h-10 w-full" />
+        <div className="mt-5 space-y-4">
+          {["w-full", "w-11/12", "w-full", "w-10/12", "w-full", "w-9/12"].map((w, i) => (
+            <Bar key={i} className={`h-3.5 ${w}`} />
           ))}
         </div>
       </div>
