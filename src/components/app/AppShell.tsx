@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { Suspense, use, useState } from "react";
 import { LogoSymbol } from "../Logo";
 import {
   IconGrid,
@@ -45,15 +45,20 @@ const ROLE_LABEL: Record<string, string> = {
   reception: "Recepção",
 };
 
+/**
+ * Contagens dos badges. Chega como promessa de propósito: o layout do servidor
+ * não a aguarda, então a tela pedida renderiza sem esperar as seis consultas
+ * que montam a central de avisos. Os pontinhos aparecem depois, em streaming.
+ */
+export type Badges = Promise<{ conversations: number; notifications: number }>;
+
 export function AppShell({
   user,
-  pendingConversations,
-  notifications,
+  badges,
   children,
 }: {
   user: { name: string; role: string };
-  pendingConversations: number;
-  notifications: number;
+  badges: Badges;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -88,6 +93,47 @@ export function AppShell({
       onClick: () => router.push(href),
       onMouseEnter: () => router.prefetch(href),
     };
+  }
+
+  /*
+   * O sino aparece duas vezes (trilho e topo do celular) e em dois momentos:
+   * primeiro sem contagem, como fallback do Suspense, e depois com ela. Por
+   * isso a marcação mora numa função só — o fallback e o resultado nunca
+   * saem de sincronia.
+   */
+  function railBell(count: number) {
+    return (
+      <button
+        type="button"
+        {...railNav("/sistema/notificacoes")}
+        aria-label={count > 0 ? `${count} avisos na clínica` : "Notificações"}
+        data-active={isActive("/sistema/notificacoes")}
+        className="rail-item cursor-pointer"
+      >
+        <span className="rail-icon">
+          <IconBell className="h-[19px] w-[19px]" />
+          {count > 0 && (
+            <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-rose-500" />
+          )}
+        </span>
+        <span className="rail-label">Notificações</span>
+      </button>
+    );
+  }
+
+  function topBell(count: number) {
+    return (
+      <Link
+        href="/sistema/notificacoes"
+        aria-label={count > 0 ? `${count} avisos na clínica` : "Notificações"}
+        className="relative grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:text-accent"
+      >
+        <IconBell className="h-[17px] w-[17px]" />
+        {count > 0 && (
+          <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-rose-500" />
+        )}
+      </Link>
+    );
   }
 
   const rail = (
@@ -128,8 +174,10 @@ export function AppShell({
           >
             <span className="rail-icon">
               <Icon className="h-[19px] w-[19px]" />
-              {href === "/sistema/conversas" && pendingConversations > 0 && (
-                <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-rose-500" />
+              {href === "/sistema/conversas" && (
+                <Suspense fallback={null}>
+                  <Dot badges={badges} field="conversations" />
+                </Suspense>
               )}
             </span>
             <span className="rail-label">{label}</span>
@@ -157,23 +205,9 @@ export function AppShell({
 
       {/* Rodapé: fora do gatilho de propósito — passar o mouse aqui não abre. */}
       <div className="flex flex-col gap-1.5">
-        <button
-          type="button"
-          {...railNav("/sistema/notificacoes")}
-          aria-label={
-            notifications > 0 ? `${notifications} avisos na clínica` : "Notificações"
-          }
-          data-active={isActive("/sistema/notificacoes")}
-          className="rail-item cursor-pointer"
-        >
-          <span className="rail-icon">
-            <IconBell className="h-[19px] w-[19px]" />
-            {notifications > 0 && (
-              <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-rose-500" />
-            )}
-          </span>
-          <span className="rail-label">Notificações</span>
-        </button>
+        <Suspense fallback={railBell(0)}>
+          <Resolved badges={badges} field="notifications" render={railBell} />
+        </Suspense>
 
         <button
           type="button"
@@ -275,18 +309,9 @@ export function AppShell({
             </button>
 
             <div className="ml-auto flex items-center gap-2">
-              <Link
-                href="/sistema/notificacoes"
-                aria-label={
-                  notifications > 0 ? `${notifications} avisos na clínica` : "Notificações"
-                }
-                className="relative grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-slate-500 transition-colors hover:text-accent"
-              >
-                <IconBell className="h-[17px] w-[17px]" />
-                {notifications > 0 && (
-                  <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-rose-500" />
-                )}
-              </Link>
+              <Suspense fallback={topBell(0)}>
+                <Resolved badges={badges} field="notifications" render={topBell} />
+              </Suspense>
 
               <button
                 type="button"
@@ -356,4 +381,24 @@ export function AppShell({
       </div>
     </div>
   );
+}
+
+/** Pontinho vermelho que só existe depois que a contagem chega. */
+function Dot({ badges, field }: { badges: Badges; field: "conversations" | "notifications" }) {
+  return use(badges)[field] > 0 ? (
+    <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-rose-500" />
+  ) : null;
+}
+
+/** Espera a contagem e entrega ao mesmo desenho usado no fallback. */
+function Resolved({
+  badges,
+  field,
+  render,
+}: {
+  badges: Badges;
+  field: "conversations" | "notifications";
+  render: (count: number) => React.ReactNode;
+}) {
+  return render(use(badges)[field]);
 }

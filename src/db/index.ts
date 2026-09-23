@@ -12,8 +12,13 @@ import * as schema from "./schema";
  *
  * Use a string do **transaction pooler** do Supabase (porta 6543) em produção:
  * cada invocação serverless é curta, e o pooler é quem aguenta o vai e vem.
- * Por isso `prepare: false` (o pgbouncer em modo transaction não suporta
- * prepared statements) e `max: 1` (uma conexão por invocação).
+ * Por isso `prepare: false` — o pgbouncer em modo transaction não suporta
+ * prepared statements.
+ *
+ * O pool tem mais de uma conexão de propósito. Com `max: 1` todo `Promise.all`
+ * de consultas virava fila: a tela mais pesada esperava uma ida ao banco atrás
+ * da outra. Quatro conexões deixam as consultas de uma mesma tela correrem
+ * juntas e continuam sendo pouco para o pooler, que é quem multiplexa.
  */
 
 let instance: PostgresJsDatabase<typeof schema> | null = null;
@@ -41,7 +46,14 @@ function connection() {
         "DATABASE_URL aponta para um arquivo SQLite. O banco agora é Postgres no Supabase.",
       );
     }
-    const client = postgres(url, { prepare: false, max: 1 });
+    const client = postgres(url, {
+      prepare: false,
+      max: 4,
+      // Conexão ociosa do pooler morre sozinha; segurá-la só gera erro na
+      // próxima consulta.
+      idle_timeout: 20,
+      connect_timeout: 10,
+    });
     instance = drizzle(client, { schema });
   }
   return instance;

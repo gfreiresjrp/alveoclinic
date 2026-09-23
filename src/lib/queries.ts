@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { and, asc, count, desc, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
@@ -238,8 +239,12 @@ export async function getConversationList(clinicId: string) {
   const convs = await getConversations(clinicId);
   if (convs.length === 0) return [];
 
+  // `distinct on` devolve uma linha por conversa: a mais recente, porque o
+  // `order by` ordena dentro de cada grupo. A versão anterior baixava todas as
+  // mensagens da clínica para ficar só com a última de cada uma — o histórico
+  // inteiro pela rede a cada abertura da tela.
   const rows = await db
-    .select({
+    .selectDistinctOn([messages.conversationId], {
       conversationId: messages.conversationId,
       role: messages.role,
       kind: messages.kind,
@@ -248,9 +253,8 @@ export async function getConversationList(clinicId: string) {
     })
     .from(messages)
     .where(inArray(messages.conversationId, convs.map((c) => c.id)))
-    .orderBy(asc(messages.createdAt));
+    .orderBy(asc(messages.conversationId), desc(messages.createdAt));
 
-  // Percorrendo em ordem crescente, a última gravação de cada conversa fica.
   const last = new Map<string, (typeof rows)[number]>();
   for (const row of rows) last.set(row.conversationId, row);
 
@@ -305,9 +309,28 @@ export type PatientRow = {
  * visita, próximo retorno e quanto está em aberto. São três agregações
  * separadas porque o SQLite não faz tudo isso num join sem multiplicar linhas.
  */
+/**
+ * Panorama dos pacientes: última visita, próxima visita e valores em aberto.
+ *
+ * O trabalho de verdade mora em `overview`, memoizado por requisição. A
+ * memoização do React compara os argumentos por identidade, então ele recebe
+ * só strings — passar o objeto de filtros direto erraria o cache toda vez. É
+ * o que segura a tela de campanhas, onde cada campanha do catálogo pede o
+ * mesmo panorama e antes disso repetia as quatro consultas uma vez por
+ * campanha.
+ */
 export async function getPatientsOverview(
   clinicId: string,
   { term = "", insurance = "", today }: { term?: string; insurance?: string; today: string },
+): Promise<PatientRow[]> {
+  return overview(clinicId, term, insurance, today);
+}
+
+const overview = cache(async function overview(
+  clinicId: string,
+  term: string,
+  insurance: string,
+  today: string,
 ): Promise<PatientRow[]> {
   const base = await searchPatients(clinicId, term);
   const rows = insurance
@@ -381,7 +404,7 @@ export async function getPatientsOverview(
     openCents: openById.get(p.id) ?? 0,
     overdueCents: overdueById.get(p.id) ?? 0,
   }));
-}
+});
 
 /** Lançamentos financeiros de um paciente, do mais recente para o mais antigo. */
 export async function getPatientFinance(clinicId: string, patientId: string) {

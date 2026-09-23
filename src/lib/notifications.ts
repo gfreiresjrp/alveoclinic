@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { and, asc, eq, lt, lte } from "drizzle-orm";
 import { db } from "@/db";
 import {
@@ -19,6 +20,11 @@ import { addDays, hhmm, isoDate, money, shortDate } from "./format";
  * Nada aqui é uma tabela de notificações: tudo é derivado do estado atual da
  * clínica. A vantagem é que o aviso some sozinho quando o problema é
  * resolvido — sem "marcar como lido" que mente, sem fila para limpar.
+ *
+ * O preço é que montar a lista custa seis consultas, e o layout pede a
+ * contagem em toda navegação. Daí o `cache` do React: dentro de uma mesma
+ * requisição o badge do sino e a tela de notificações dividem o mesmo
+ * resultado.
  */
 
 export type NotificationTone = "urgente" | "atencao" | "info";
@@ -34,7 +40,9 @@ export type Notification = {
   date?: string;
 };
 
-export async function loadNotifications(clinicId: string): Promise<Notification[]> {
+export const loadNotifications = cache(async function loadNotifications(
+  clinicId: string,
+): Promise<Notification[]> {
   const hoje = isoDate(new Date());
   const amanha = addDays(hoje, 1);
 
@@ -202,7 +210,7 @@ export async function loadNotifications(clinicId: string): Promise<Notification[
   }
 
   return avisos;
-}
+});
 
 const ORDEM: Record<NotificationTone, number> = { urgente: 0, atencao: 1, info: 2 };
 

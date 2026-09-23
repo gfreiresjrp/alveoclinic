@@ -12,12 +12,15 @@ export const metadata: Metadata = { title: "Íris", robots: { index: false } };
 
 export default async function IrisPage() {
   const { clinic } = await requireSession();
-  const cfg = await loadIrisSettings(clinic.id);
 
   const desde = addDays(isoDate(new Date()), -30);
   const desdeMs = new Date(`${desde}T00:00:00`);
 
-  const [todas, comEquipe, marcadas, respostas, handoffs] = await Promise.all([
+  // As configurações entram no mesmo lote: não dependem de nada abaixo e,
+  // sozinhas na frente, custavam uma ida ao banco antes de todas as outras.
+  const [cfg, todas, comEquipe, marcadas, respostas, handoffs] = await Promise.all([
+    loadIrisSettings(clinic.id),
+
     db
       .select({ n: count() })
       .from(conversations)
