@@ -21,7 +21,13 @@ export async function GET() {
     SUPABASE_SERVICE_ROLE_KEY: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
   };
 
-  let alvo: { protocolo: string; host: string; porta: string; temSenha: boolean } | null = null;
+  let alvo: {
+    protocolo: string;
+    host: string;
+    porta: string;
+    usuario: string;
+    temSenha: boolean;
+  } | null = null;
   if (url) {
     try {
       const u = new URL(url);
@@ -29,11 +35,19 @@ export async function GET() {
         protocolo: u.protocol,
         host: u.hostname,
         porta: u.port || "(padrão)",
+        // No pooler o usuário é postgres.<project_ref>, não só "postgres".
+        usuario: u.username,
         // Só se existe; o valor nunca sai daqui.
         temSenha: Boolean(u.password) && !u.password.includes("YOUR-PASSWORD"),
       };
     } catch {
-      alvo = { protocolo: "?", host: "(url inválida)", porta: "?", temSenha: false };
+      alvo = {
+        protocolo: "?",
+        host: "(url inválida)",
+        porta: "?",
+        usuario: "?",
+        temSenha: false,
+      };
     }
   }
 
