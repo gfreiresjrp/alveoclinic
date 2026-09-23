@@ -8,7 +8,11 @@ const PBKDF2_ITERATIONS = 210_000;
 
 function secret() {
   const s = process.env.AUTH_SECRET;
-  if (!s) throw new Error("AUTH_SECRET não definido no .env.local");
+  if (!s) {
+    throw new Error(
+      "AUTH_SECRET não definido. É o segredo que assina o cookie de sessão: gere com `openssl rand -base64 32` e configure no ambiente (.env.local aqui, variáveis do projeto no deploy).",
+    );
+  }
   return s;
 }
 

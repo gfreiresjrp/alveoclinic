@@ -19,6 +19,8 @@ export async function GET() {
     DATABASE_URL: Boolean(url),
     SUPABASE_URL: Boolean(process.env.SUPABASE_URL),
     SUPABASE_SERVICE_ROLE_KEY: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+    // Obrigatória junto com DATABASE_URL: sem ela o login estoura.
+    AUTH_SECRET: Boolean(process.env.AUTH_SECRET),
   };
 
   let alvo: {
@@ -63,7 +65,10 @@ export async function GET() {
     };
     // A mensagem só é repassada quando é uma validação nossa — as do driver
     // podem trazer pedaços da connection string.
-    const nossa = e.message?.startsWith("DATABASE_URL") ? e.message : null;
+    const nossa =
+      e.message?.startsWith("DATABASE_URL") || e.message?.startsWith("AUTH_SECRET")
+        ? e.message
+        : null;
     return NextResponse.json(
       {
         ok: false,
