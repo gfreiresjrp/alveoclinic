@@ -39,6 +39,14 @@ const links = [
   { href: "/sistema/proteticos", label: "Protéticos", icon: IconRecord, exact: false },
 ];
 
+/*
+ * O tipo das opções de prefetch não é exportado por "next/navigation", e o
+ * `kind` é um enum — derivar da própria assinatura evita tanto o `any` quanto
+ * um import de caminho interno do Next, que some no próximo upgrade.
+ */
+type OpcoesPrefetch = NonNullable<Parameters<ReturnType<typeof useRouter>["prefetch"]>[1]>;
+const PREFETCH_CHEIO = { kind: "full" as OpcoesPrefetch["kind"] };
+
 const ROLE_LABEL: Record<string, string> = {
   admin: "Administrador",
   dentist: "Dentista",
@@ -85,13 +93,18 @@ export function AppShell({
   /*
    * O trilho navega por JS, não com <a href>. O motivo é a barra de status do
    * navegador, que mostra a URL no canto inferior toda vez que o mouse passa
-   * por um link — não há como desligá-la pela página. O prefetch no hover
-   * mantém a navegação tão rápida quanto a do <Link>.
+   * por um link — não há como desligá-la pela página.
+   *
+   * O preço disso é que a opção `dynamicOnHover` do Next só vale para <Link>:
+   * aqui o prefetch padrão traria apenas o esqueleto, e a parte cara só
+   * começaria no clique. Daí o `kind: "full"` — o hover já busca a tela
+   * inteira, e o clique vira só a troca. Com o cache do roteador segurando o
+   * resultado, voltar a uma aba recente não toca no servidor.
    */
   function railNav(href: string) {
     return {
       onClick: () => router.push(href),
-      onMouseEnter: () => router.prefetch(href),
+      onMouseEnter: () => router.prefetch(href, PREFETCH_CHEIO),
     };
   }
 
@@ -270,7 +283,7 @@ export function AppShell({
                     setAccount(false);
                     router.push("/sistema/configuracoes");
                   }}
-                  onMouseEnter={() => router.prefetch("/sistema/configuracoes")}
+                  onMouseEnter={() => router.prefetch("/sistema/configuracoes", PREFETCH_CHEIO)}
                   className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors hover:bg-slate-100 ${
                     isActive("/sistema/configuracoes")
                       ? "font-medium text-accent"
