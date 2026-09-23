@@ -11,6 +11,27 @@ de pré-atendimento que conversa no WhatsApp e marca na agenda real da clínica.
 - Anthropic SDK (motor da Íris) + WhatsApp Cloud API
 - Fontes: Poppins (display) + Montserrat (texto)
 
+## Banco
+
+Postgres no Supabase, via Drizzle + `postgres-js`. Variáveis necessárias:
+
+| Variável | Para quê |
+| --- | --- |
+| `DATABASE_URL` | Connection string. Em produção use o **transaction pooler** (porta 6543); para `db:push` use a **direta** (5432), que o pooler não faz DDL |
+| `SUPABASE_URL` | Projeto do Supabase, para o Storage |
+| `SUPABASE_SERVICE_ROLE_KEY` | Chave de serviço, só no servidor |
+| `SUPABASE_MEDIA_BUCKET` | Opcional; o padrão é `media` |
+
+A conexão em `src/db/index.ts` é **preguiçosa de propósito**: o `next build`
+importa cada rota para coletar configuração, e abrir o banco no topo do módulo
+derrubava o build numa máquina sem banco.
+
+Os áudios das conversas seguem a mesma lógica em `src/lib/media.ts`: com
+`SUPABASE_URL` e a chave de serviço presentes vão para o Storage; sem elas,
+para `data/media` — que é o modo de desenvolvimento. Serverless não tem disco
+que persista, então em produção o bucket não é opcional. O bucket é privado: o
+áudio chega ao navegador pela rota `/api/media/[id]`, que confere a sessão.
+
 ## Rodando
 
 ```bash

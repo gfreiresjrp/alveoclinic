@@ -1,11 +1,10 @@
-import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { conversations, messages } from "@/db/schema";
 import { getSession } from "@/lib/session";
-import { CONTENT_TYPES, MEDIA_DIR } from "@/lib/media";
+import { CONTENT_TYPES, readAudio } from "@/lib/media";
 
 export const runtime = "nodejs";
 
@@ -34,16 +33,14 @@ export async function GET(
   const contentType = CONTENT_TYPES[extension];
   if (!contentType) return new NextResponse("formato inválido", { status: 415 });
 
-  try {
-    const file = await readFile(path.join(MEDIA_DIR, name));
-    return new NextResponse(new Uint8Array(file), {
-      headers: {
-        "Content-Type": contentType,
-        "Content-Length": String(file.byteLength),
-        "Cache-Control": "private, max-age=31536000, immutable",
-      },
-    });
-  } catch {
-    return new NextResponse("não encontrado", { status: 404 });
-  }
+  const file = await readAudio(name);
+  if (!file) return new NextResponse("não encontrado", { status: 404 });
+
+  return new NextResponse(file, {
+    headers: {
+      "Content-Type": contentType,
+      "Content-Length": String(file.byteLength),
+      "Cache-Control": "private, max-age=31536000, immutable",
+    },
+  });
 }

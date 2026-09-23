@@ -1,11 +1,12 @@
-import { sql } from "drizzle-orm";
 import {
+  boolean,
   index,
   integer,
-  sqliteTable,
+  pgTable,
   text,
+  timestamp,
   uniqueIndex,
-} from "drizzle-orm/sqlite-core";
+} from "drizzle-orm/pg-core";
 
 /**
  * Convenções do schema:
@@ -14,14 +15,15 @@ import {
  *   nenhuma query pode cruzar esse limite;
  * - data de agenda é `date` (YYYY-MM-DD) + minutos desde a meia-noite, o que
  *   deixa a grade e as comparações de horário triviais e livres de fuso;
- * - dinheiro é sempre `integer` em centavos.
+ * - dinheiro é sempre `integer` em centavos;
+ * - o banco é Postgres (Supabase); ids continuam sendo gerados na aplicação.
  */
 
-const createdAt = integer("created_at", { mode: "timestamp_ms" })
+const createdAt = timestamp("created_at", { withTimezone: true })
   .notNull()
-  .default(sql`(unixepoch() * 1000)`);
+  .defaultNow();
 
-export const clinics = sqliteTable("clinics", {
+export const clinics = pgTable("clinics", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   cnpj: text("cnpj"),
@@ -35,7 +37,7 @@ export const clinics = sqliteTable("clinics", {
   createdAt,
 });
 
-export const users = sqliteTable(
+export const users = pgTable(
   "users",
   {
     id: text("id").primaryKey(),
@@ -52,22 +54,22 @@ export const users = sqliteTable(
     cro: text("cro"),
     specialty: text("specialty"),
     color: text("color").notNull().default("#c6e31a"),
-    active: integer("active", { mode: "boolean" }).notNull().default(true),
+    active: boolean("active").notNull().default(true),
     createdAt,
   },
   (t) => [uniqueIndex("users_email_idx").on(t.email)],
 );
 
-export const chairs = sqliteTable("chairs", {
+export const chairs = pgTable("chairs", {
   id: text("id").primaryKey(),
   clinicId: text("clinic_id")
     .notNull()
     .references(() => clinics.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
-  active: integer("active", { mode: "boolean" }).notNull().default(true),
+  active: boolean("active").notNull().default(true),
 });
 
-export const procedures = sqliteTable("procedures", {
+export const procedures = pgTable("procedures", {
   id: text("id").primaryKey(),
   clinicId: text("clinic_id")
     .notNull()
@@ -79,11 +81,11 @@ export const procedures = sqliteTable("procedures", {
   durationMin: integer("duration_min").notNull().default(30),
   priceCents: integer("price_cents").notNull().default(0),
   /** Procedimento é aplicado a um dente específico (restauração, canal…). */
-  perTooth: integer("per_tooth", { mode: "boolean" }).notNull().default(false),
-  active: integer("active", { mode: "boolean" }).notNull().default(true),
+  perTooth: boolean("per_tooth").notNull().default(false),
+  active: boolean("active").notNull().default(true),
 });
 
-export const patients = sqliteTable(
+export const patients = pgTable(
   "patients",
   {
     id: text("id").primaryKey(),
@@ -109,7 +111,7 @@ export const patients = sqliteTable(
   (t) => [index("patients_clinic_idx").on(t.clinicId, t.name)],
 );
 
-export const appointments = sqliteTable(
+export const appointments = pgTable(
   "appointments",
   {
     id: text("id").primaryKey(),
@@ -146,7 +148,7 @@ export const appointments = sqliteTable(
     /** Motivo da consulta, informado no agendamento. */
     reason: text("reason"),
     /** Horário real de chegada do paciente na recepção. */
-    arrivedAt: integer("arrived_at", { mode: "timestamp_ms" }),
+    arrivedAt: timestamp("arrived_at", { withTimezone: true }),
     /** Quem marcou: a equipe, a IA no WhatsApp ou o próprio paciente online. */
     source: text("source", { enum: ["staff", "ai", "online"] })
       .notNull()
@@ -158,7 +160,7 @@ export const appointments = sqliteTable(
 );
 
 /** Estado corrente de cada dente/face no odontograma. */
-export const toothRecords = sqliteTable(
+export const toothRecords = pgTable(
   "tooth_records",
   {
     id: text("id").primaryKey(),
@@ -186,14 +188,14 @@ export const toothRecords = sqliteTable(
       ],
     }).notNull(),
     note: text("note"),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
-      .default(sql`(unixepoch() * 1000)`),
+      .defaultNow(),
   },
   (t) => [index("tooth_patient_idx").on(t.patientId, t.tooth)],
 );
 
-export const treatmentPlans = sqliteTable("treatment_plans", {
+export const treatmentPlans = pgTable("treatment_plans", {
   id: text("id").primaryKey(),
   clinicId: text("clinic_id")
     .notNull()
@@ -215,7 +217,7 @@ export const treatmentPlans = sqliteTable("treatment_plans", {
   createdAt,
 });
 
-export const treatmentItems = sqliteTable(
+export const treatmentItems = pgTable(
   "treatment_items",
   {
     id: text("id").primaryKey(),
@@ -231,13 +233,13 @@ export const treatmentItems = sqliteTable(
     status: text("status", { enum: ["pending", "done", "canceled"] })
       .notNull()
       .default("pending"),
-    doneAt: integer("done_at", { mode: "timestamp_ms" }),
+    doneAt: timestamp("done_at", { withTimezone: true }),
   },
   (t) => [index("treatment_items_plan_idx").on(t.planId)],
 );
 
 /** Evolução clínica — o prontuário propriamente dito. */
-export const clinicalNotes = sqliteTable(
+export const clinicalNotes = pgTable(
   "clinical_notes",
   {
     id: text("id").primaryKey(),
@@ -257,7 +259,7 @@ export const clinicalNotes = sqliteTable(
   (t) => [index("clinical_notes_patient_idx").on(t.patientId)],
 );
 
-export const financeEntries = sqliteTable(
+export const financeEntries = pgTable(
   "finance_entries",
   {
     id: text("id").primaryKey(),
@@ -291,7 +293,7 @@ export const financeEntries = sqliteTable(
 );
 
 /** Conversas da Íris no WhatsApp. */
-export const conversations = sqliteTable(
+export const conversations = pgTable(
   "conversations",
   {
     id: text("id").primaryKey(),
@@ -308,13 +310,13 @@ export const conversations = sqliteTable(
       .default("ai"),
     /** Motivo da transferência para um humano, quando houver. */
     handoffReason: text("handoff_reason"),
-    lastMessageAt: integer("last_message_at", { mode: "timestamp_ms" }),
+    lastMessageAt: timestamp("last_message_at", { withTimezone: true }),
     createdAt,
   },
   (t) => [index("conversations_clinic_idx").on(t.clinicId, t.lastMessageAt)],
 );
 
-export const messages = sqliteTable(
+export const messages = pgTable(
   "messages",
   {
     id: text("id").primaryKey(),
@@ -340,7 +342,7 @@ export const messages = sqliteTable(
  * O saldo podia ser derivado dos movimentos, mas a recepção consulta a lista
  * o tempo todo — manter a soma pronta evita varrer o histórico a cada tela.
  */
-export const stockItems = sqliteTable(
+export const stockItems = pgTable(
   "stock_items",
   {
     id: text("id").primaryKey(),
@@ -355,13 +357,13 @@ export const stockItems = sqliteTable(
     /** Abaixo disso o item aparece como "repor". */
     minQuantity: integer("min_quantity").notNull().default(0),
     supplier: text("supplier"),
-    active: integer("active", { mode: "boolean" }).notNull().default(true),
+    active: boolean("active").notNull().default(true),
     createdAt,
   },
   (t) => [index("stock_items_clinic_idx").on(t.clinicId, t.name)],
 );
 
-export const stockMoves = sqliteTable(
+export const stockMoves = pgTable(
   "stock_moves",
   {
     id: text("id").primaryKey(),
@@ -387,7 +389,7 @@ export const stockMoves = sqliteTable(
  * Trabalhos enviados ao laboratório de prótese: o que foi, para quem, quando
  * volta e quanto custou. É o caderninho do protético dentro do sistema.
  */
-export const labCases = sqliteTable(
+export const labCases = pgTable(
   "lab_cases",
   {
     id: text("id").primaryKey(),
@@ -424,12 +426,12 @@ export const labCases = sqliteTable(
  * de um produto (a IA), não um dado cadastral — e porque cresce sozinha.
  * Tudo aqui muda o comportamento real do motor em `src/lib/iris.ts`.
  */
-export const irisSettings = sqliteTable("iris_settings", {
+export const irisSettings = pgTable("iris_settings", {
   clinicId: text("clinic_id")
     .primaryKey()
     .references(() => clinics.id, { onDelete: "cascade" }),
   /** Desligada, a Íris não responde: toda conversa nova já nasce com a equipe. */
-  active: integer("active", { mode: "boolean" }).notNull().default(true),
+  active: boolean("active").notNull().default(true),
   /** acolhedor | direto | formal — entra no prompt como instrução de tom. */
   tone: text("tone", { enum: ["acolhedor", "direto", "formal"] })
     .notNull()
@@ -437,9 +439,9 @@ export const irisSettings = sqliteTable("iris_settings", {
   /** Como ela se apresenta na primeira mensagem da conversa. */
   greeting: text("greeting"),
   /** Com isso desligado ela informa e transfere, mas não marca sozinha. */
-  canSchedule: integer("can_schedule", { mode: "boolean" }).notNull().default(true),
+  canSchedule: boolean("can_schedule").notNull().default(true),
   /** Fora do horário da clínica: responder normalmente ou só avisar. */
-  answerOutsideHours: integer("answer_outside_hours", { mode: "boolean" })
+  answerOutsideHours: boolean("answer_outside_hours")
     .notNull()
     .default(true),
   awayMessage: text("away_message"),
@@ -449,7 +451,7 @@ export const irisSettings = sqliteTable("iris_settings", {
   maxAiMessages: integer("max_ai_messages").notNull().default(0),
   /** Texto livre acrescentado ao fim do prompt. */
   extraInstructions: text("extra_instructions"),
-  updatedAt: integer("updated_at", { mode: "timestamp_ms" }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }),
 });
 
 /**
@@ -457,7 +459,7 @@ export const irisSettings = sqliteTable("iris_settings", {
  * receita e pedido de exame. O corpo é texto puro, montado a partir de um
  * modelo e editável antes de salvar — o que for impresso fica registrado.
  */
-export const documents = sqliteTable(
+export const documents = pgTable(
   "documents",
   {
     id: text("id").primaryKey(),
@@ -483,7 +485,7 @@ export const documents = sqliteTable(
  * Lembrete preso ao paciente: "ligar no dia 15 porque o cartão dele vira".
  * Vence numa data e aparece na visão geral até alguém marcar como feito.
  */
-export const patientReminders = sqliteTable(
+export const patientReminders = pgTable(
   "patient_reminders",
   {
     id: text("id").primaryKey(),
@@ -496,14 +498,14 @@ export const patientReminders = sqliteTable(
     /** YYYY-MM-DD */
     dueDate: text("due_date").notNull(),
     note: text("note").notNull(),
-    done: integer("done", { mode: "boolean" }).notNull().default(false),
+    done: boolean("done").notNull().default(false),
     createdAt,
   },
   (t) => [index("patient_reminders_idx").on(t.clinicId, t.dueDate)],
 );
 
 /** Pagamentos avulsos de um lançamento — parcial e em formas diferentes. */
-export const payments = sqliteTable(
+export const payments = pgTable(
   "payments",
   {
     id: text("id").primaryKey(),
@@ -526,7 +528,7 @@ export const payments = sqliteTable(
 );
 
 /** Campanhas automáticas: cada linha é um tipo ligado/desligado na clínica. */
-export const campaigns = sqliteTable(
+export const campaigns = pgTable(
   "campaigns",
   {
     id: text("id").primaryKey(),
@@ -538,17 +540,17 @@ export const campaigns = sqliteTable(
     name: text("name").notNull(),
     description: text("description").notNull(),
     template: text("template").notNull(),
-    active: integer("active", { mode: "boolean" }).notNull().default(false),
+    active: boolean("active").notNull().default(false),
     /** Parâmetros do público, em JSON (meses de inatividade, convênio…). */
     config: text("config"),
-    lastRunAt: integer("last_run_at", { mode: "timestamp_ms" }),
+    lastRunAt: timestamp("last_run_at", { withTimezone: true }),
     createdAt,
   },
   (t) => [index("campaigns_clinic_idx").on(t.clinicId)],
 );
 
 /** Registro de cada mensagem disparada — evita mandar duas vezes no mesmo dia. */
-export const campaignSends = sqliteTable(
+export const campaignSends = pgTable(
   "campaign_sends",
   {
     id: text("id").primaryKey(),
@@ -560,7 +562,7 @@ export const campaignSends = sqliteTable(
       .references(() => patients.id, { onDelete: "cascade" }),
     phone: text("phone").notNull(),
     text: text("text").notNull(),
-    delivered: integer("delivered", { mode: "boolean" }).notNull().default(false),
+    delivered: boolean("delivered").notNull().default(false),
     /** YYYY-MM-DD do disparo. */
     sentOn: text("sent_on").notNull(),
     createdAt,

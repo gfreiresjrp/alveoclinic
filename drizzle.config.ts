@@ -3,9 +3,10 @@ import type { Config } from "drizzle-kit";
 export default {
   schema: "./src/db/schema.ts",
   out: "./drizzle",
-  dialect: "turso",
+  dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL ?? "file:./data/alveo.db",
-    authToken: process.env.DATABASE_AUTH_TOKEN,
+    // Para `db:push` use a connection string DIRETA do Supabase (porta 5432).
+    // O pooler da 6543 não serve para DDL.
+    url: process.env.DATABASE_URL!,
   },
 } satisfies Config;

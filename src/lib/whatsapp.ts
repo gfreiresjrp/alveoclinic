@@ -58,23 +58,21 @@ export async function sendWhatsAppAudio(to: string, mediaFileName: string) {
     return { sent: false as const };
   }
 
-  const { readFile } = await import("node:fs/promises");
   const path = await import("node:path");
-  const { MEDIA_DIR, CONTENT_TYPES } = await import("./media");
+  const { CONTENT_TYPES, readAudio } = await import("./media");
 
   const name = path.basename(mediaFileName);
   const extension = name.split(".").pop() ?? "";
   const contentType = CONTENT_TYPES[extension];
   if (!contentType) return { sent: false as const };
 
+  const bytes = await readAudio(name);
+  if (!bytes) return { sent: false as const };
+
   const upload = new FormData();
   upload.append("messaging_product", "whatsapp");
   upload.append("type", contentType);
-  upload.append(
-    "file",
-    new Blob([new Uint8Array(await readFile(path.join(MEDIA_DIR, name)))], { type: contentType }),
-    name,
-  );
+  upload.append("file", new Blob([bytes], { type: contentType }), name);
 
   const uploaded = await fetch(
     `https://graph.facebook.com/v21.0/${process.env.WHATSAPP_PHONE_ID}/media`,

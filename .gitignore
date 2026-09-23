@@ -48,6 +48,6 @@ data/media/
 # grafo do graphify: artefato gerado (inclui cache e backups) — refaça com `graphify update .`
 graphify-out/
 
-# cloudflare / opennext
-.open-next/
-.wrangler/
+
+# config do MCP: traz o project_ref do Supabase e o repositório é público
+.mcp.json
