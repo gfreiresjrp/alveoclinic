@@ -47,3 +47,7 @@ data/media/
 
 # grafo do graphify: artefato gerado (inclui cache e backups) — refaça com `graphify update .`
 graphify-out/
+
+# cloudflare / opennext
+.open-next/
+.wrangler/
