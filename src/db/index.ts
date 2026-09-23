@@ -15,13 +15,28 @@ import * as schema from "./schema";
  * Por isso `prepare: false` — o pgbouncer em modo transaction não suporta
  * prepared statements.
  *
- * O pool tem mais de uma conexão de propósito. Com `max: 1` todo `Promise.all`
- * de consultas virava fila: a tela mais pesada esperava uma ida ao banco atrás
- * da outra. Quatro conexões deixam as consultas de uma mesma tela correrem
- * juntas e continuam sendo pouco para o pooler, que é quem multiplexa.
+ * O tamanho do pool sai da porta da string, e não de um número fixo, porque
+ * os dois modos do Supavisor cobram coisas bem diferentes:
+ *
+ * - 6543 (transaction): o pooler multiplexa, várias conexões por invocação
+ *   são baratas e é o que deixa os `Promise.all` de uma tela correrem juntos
+ *   em vez de virar fila.
+ * - 5432 (session) ou conexão direta: cada conexão trava um slot dos 15 do
+ *   projeto enquanto viver. Quatro por invocação e meia dúzia de invocações
+ *   simultâneas já derrubam o sistema inteiro com EMAXCONNSESSION — foi
+ *   exatamente o que aconteceu aqui.
  */
 
 let instance: PostgresJsDatabase<typeof schema> | null = null;
+
+/** Porta da string, ou "" quando ela não é uma URL analisável. */
+function portaDe(url: string) {
+  try {
+    return new URL(url).port;
+  } catch {
+    return "";
+  }
+}
 
 function connection() {
   if (!instance) {
@@ -46,12 +61,20 @@ function connection() {
         "DATABASE_URL aponta para um arquivo SQLite. O banco agora é Postgres no Supabase.",
       );
     }
+    const transacao = portaDe(url) === "6543";
+    if (!transacao) {
+      console.warn(
+        "DATABASE_URL não aponta para o transaction pooler (porta 6543). O pool foi limitado a uma conexão para não estourar os 15 slots do modo session — as telas ficam mais lentas. Troque pela URI em Supabase -> Connect -> Transaction pooler.",
+      );
+    }
+
     const client = postgres(url, {
       prepare: false,
-      max: 4,
+      max: transacao ? 4 : 1,
       // Conexão ociosa do pooler morre sozinha; segurá-la só gera erro na
-      // próxima consulta.
-      idle_timeout: 20,
+      // próxima consulta. No modo session ela ainda ocupa um slot, então a
+      // espera é bem mais curta.
+      idle_timeout: transacao ? 20 : 5,
       connect_timeout: 10,
     });
     instance = drizzle(client, { schema });
